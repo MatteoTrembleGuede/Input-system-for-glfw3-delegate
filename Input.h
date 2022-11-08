@@ -489,6 +489,9 @@ public:
 	static KeyboardLayout GetKeyboardLayout() { return keyboardLayout; };
 	static DeviceID GetLastUsedDeviceID() { return lastUsedDevice; };
 	static MousePos GetMousePosition() { return mousePos; };
+	static void AllowTextInput(bool allow) { allowTextInput = allow; };
+	static void ResetInputString() { textInput.clear(); }
+	static std::string GetInputString();
 	static void SetMousePosition(MousePos _newPos);
 	static void SetCursorVisible(bool _visible);
 
@@ -501,13 +504,17 @@ private:
 	static std::vector<StickNotify> mouseAxisNotifs;
 	static std::vector<JoystickDevice> joystickDevices;
 	static DeviceID lastUsedDevice;
+	static std::list<std::string> textInput;
+	static bool allowTextInput;
 
 	static void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 	static void MouseButton_Callback(GLFWwindow* window, int button, int action, int mods);
 	static void MouseWheel_Callback(GLFWwindow* window, double x, double y);
 	static void JoystickConnection_Callback(int ID, int status);
+	static void UnicodeChar_Callback(GLFWwindow* window, unsigned int character);
 	static void CheckJoysticks();
 	static void UpdateJoysticks();
+	static void UpdateMousePos();
 
 public:
 

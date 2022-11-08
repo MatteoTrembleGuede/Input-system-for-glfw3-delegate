@@ -4,6 +4,9 @@
 #include <stdexcept>
 #include <iostream>
 #include <fstream>
+#include <array>
+#include <io.h>
+#include <fcntl.h>
 
 #define keyID data[0].kv
 #define hatId data[0].i
@@ -28,6 +31,8 @@ int Input::maxHats;
 int Input::maxSticks;
 Input::MousePos Input::mousePos;
 Input::MousePos Input::lastMouseDelta;
+std::list<std::string> Input::textInput;
+bool Input::allowTextInput;
 
 std::string Input::Key::KeyToString() const
 {
@@ -546,6 +551,13 @@ void Input::Init()
 	mouseAxisNotifs.push_back(Input::StickNotify());
 
 	GLFWwindow* window = glfwGetCurrentContext();
+
+	if (window == nullptr)
+	{
+		MessageBoxA(nullptr, "Error initialising Input : opengl context was not initialised", "Error", MB_ICONERROR | MB_OK);
+		throw std::runtime_error("Uninitialised opengl context");
+	}
+
 	std::string testKeyboardLayout;
 	if ((testKeyboardLayout = glfwGetKeyName(Input::KeyVal::W, 0)) == "w")
 	{
@@ -565,6 +577,8 @@ void Input::Init()
 	}
 	lastUsedDevice = KeyBoardDeviceID();
 	listener = nullptr;
+	allowTextInput = false;
+	std::setlocale(LC_ALL, "en_US.utf8");
 	if (glfwRawMouseMotionSupported())
 		glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 	CheckJoysticks();
@@ -573,6 +587,7 @@ void Input::Init()
 	glfwSetJoystickCallback(&Input::JoystickConnection_Callback);
 	glfwSetMouseButtonCallback(window, &Input::MouseButton_Callback);
 	glfwSetScrollCallback(window, &Input::MouseWheel_Callback);
+	glfwSetCharCallback(window, &Input::UnicodeChar_Callback);
 }
 
 void Input::CheckJoysticks()
@@ -597,17 +612,15 @@ void Input::UpdateJoysticks()
 	}
 }
 
-void Input::PollEvents()
+void Input::UpdateMousePos()
 {
-	glfwPollEvents();
+	double x, y, dx, dy;
+	Key kH(Horizontal);
+	Key kV(Vertical);
 
-	Key kH = Key(Horizontal);
-	Key kV = Key(Vertical);
-
-	double x, y;
 	glfwGetCursorPos(glfwGetCurrentContext(), &x, &y);
-	double dx = x - mousePos.x;
-	double dy = y - mousePos.y;
+	dx = x - mousePos.x;
+	dy = y - mousePos.y;
 
 	if (dx != lastMouseDelta.x)
 	{
@@ -620,9 +633,21 @@ void Input::PollEvents()
 
 	mousePos = MousePos{ x, y };
 	lastMouseDelta = MousePos{ dx, dy };
+}
 
+void Input::PollEvents()
+{
+	glfwPollEvents();
+	UpdateMousePos();
 	UpdateJoysticks();
 	eventExecutor();
+}
+
+std::string Input::GetInputString()
+{
+	std::string tmp;
+	for (std::string& str : textInput) tmp += str;
+	return tmp;
 }
 
 void Input::SetMousePosition(MousePos _newPos)
@@ -713,6 +738,14 @@ void Input::Instance::SetActionListening(std::string name)
 
 void Input::Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+	if (allowTextInput && (action == Press || action == Hold))
+	{
+		if (key == KeyVal::BACKSPACE && textInput.size() > 0)
+			textInput.pop_back();
+		else if (key == KeyVal::ENTER || key == KeyVal::KP_ENTER)
+			textInput.push_back("\n");
+	}
+
 	if (key >= 0 && key < KeyVal::Count)
 	{
 		Key k = Key((Input::KeyVal)key);
@@ -757,6 +790,22 @@ void Input::JoystickConnection_Callback(int ID, int status)
 	{
 		joystickDevices[ID].ConfigureJoystick();
 		joystickDevices[Any].ConfigureJoystick();
+	}
+}
+
+void Input::UnicodeChar_Callback(GLFWwindow* window, unsigned int character)
+{
+	if (allowTextInput)
+	{
+		std::wstring tmp;
+		tmp = character;
+
+		bool shifts = std::wctomb(nullptr, 0);  // reset the conversion state
+		std::array<char, 7> buffer;
+		const int ret = std::wctomb(buffer.data(), character);
+		if (ret < 0) throw std::invalid_argument("inconvertible wide characters in the current locale");
+		buffer[ret] = '\0';  // make 'buffer' contain a C-style string
+		textInput.push_back(std::string(buffer.data()));
 	}
 }
 
