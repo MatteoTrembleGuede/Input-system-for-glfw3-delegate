@@ -33,7 +33,7 @@ public:
 	// just a hint at what listening mode would be better for a given axis
 	enum AxisListeningPreference
 	{
-		OneKey, // for sticks going from -1 to 1 or triggers going from 0 to 1
+		OneKey, // for sticks going from -1 to 1
 		TwoKeys, // for simulated sticks with a forward key (1) and a backward key (-1)
 	};
 
@@ -69,7 +69,7 @@ public:
 		MButton = KKey
 	};
 
-	enum KeyVal
+	enum KeyCode
 	{
 		UNKNOWN = -1,
 		SPACE = 32,
@@ -252,7 +252,7 @@ private:
 	union KeyData
 	{
 		int i;
-		Input::KeyVal kv;
+		Input::KeyCode kv;
 		Input::HatDirection hd;
 		Input::StickDirection sd;
 		Input::MouseAxis ma;
@@ -279,6 +279,7 @@ public:
 		bool operator==(const DeviceID& d) const;
 		DeviceID(DeviceType _type, JoystickID _jID) : type(_type), jID(_jID){};
 		bool IsValidInput(Input::Key& key);
+		std::string ToString();
 	};
 
 	struct KeyBoardDeviceID : public DeviceID
@@ -306,7 +307,8 @@ public:
 
 		Input::KeyData data[2];
 
-		Key(Input::KeyVal kID);
+		Key() : Key(0) {};
+		Key(Input::KeyCode kID);
 		Key(Input::MouseAxis mAxis);
 		Key(int hID, Input::HatDirection dir);
 		Key(int sID, Input::StickDirection dir);
@@ -321,8 +323,14 @@ public:
 
 private:
 
-	DeclareDelegate(KeyNotify, Key&, Mode);
+	DeclareDelegate(KeyNotifyBase, Key&, Mode);
 	DeclareDelegate(StickNotify, Key&, float, float);
+
+	class KeyNotify : public KeyNotifyBase
+	{
+	public:
+		virtual void operator()(Key& k, Mode m) override;
+	};
 
 	class Action;
 	class Axis;
@@ -382,11 +390,14 @@ private:
 
 	public:
 
+		Notify action[3];
+
 		// shouldn't be used
 		Action() : dNotifFinder(nullptr) {};
 
 		Action(Input::KeyNotifyFinder::Device& dnf) : dNotifFinder(&dnf) {};
-		Notify action[3];
+
+		~Action();
 
 		void Unbind();
 		void Rebind();
@@ -394,6 +405,7 @@ private:
 		void SetKeys(std::list<Input::Key>& keys);
 		void ClearKeys();
 		std::string GetKeyString();
+		std::vector<Key> GetKeys();
 
 	};
 
@@ -411,6 +423,7 @@ private:
 		float tmpB;
 		float currentValue;
 		float lastValue;
+		bool isBound = false;
 
 		void KeyCallback(Input::Key& key, Input::Mode _mode);
 		void StickCallback(Input::Key& key, float _currentValue, float _lastValue);
@@ -436,12 +449,15 @@ private:
 			tmpB(0), tmpF(0)
 		{};
 
+		~Axis();
+
 		void Unbind();
 		void Rebind();
 		void SetKeys(Input::Key& _forwardKey, Input::Key& _backwardKey);
 		void SetKeys(Input::Key& forwardStick);
 		AxisListeningPreference GetListeningPreferedMode() { return listeningPreference; };
 		std::string GetKeyString();
+		std::pair<Input::Key, Input::Key> GetKeys();
 
 	};
 
@@ -452,13 +468,19 @@ private:
 		std::string name;
 
 		// sticks
+		int axesCount;
+		const float* axes;
 		std::vector<float> deadZones;
 		std::vector<float> stickValues;
 
 		// buttons
+		int buttonCount;
+		const unsigned char* buttons;
 		std::vector<bool> buttonValues;
 
 		// hats
+		int hatCount;
+		const unsigned char* hats;
 		std::vector<unsigned char> hatValues;
 		
 		void UpdateHats();
@@ -478,22 +500,32 @@ private:
 		void ConfigureAsAny();
 		void ConfigureJoystick();
 		std::string GetName() { return name; };
-
+		float GetDeadzone(int sID) { return deadZones[sID]; };
+		void SetDeadzone(int sID, float dz) { deadZones[sID] = dz; };
+		float GetStickValue(int sID) { return stickValues[sID]; };
 	};
 
 public:
 
-	// need a glfw window to be created first
+	// Put this line before initialising opengl: glfwInitHint(GLFW_JOYSTICK_HAT_BUTTONS, GLFW_FALSE);
+	// if not, hats will be considered as buttons AND hats which might be confusing but shouldn't cause problems.
+	// Needs a glfw window to be created first.
 	static void Init();
 	static void PollEvents();
 	static KeyboardLayout GetKeyboardLayout() { return keyboardLayout; };
 	static DeviceID GetLastUsedDeviceID() { return lastUsedDevice; };
+	static Key GetLastUsedKey() { return lastUsedKey; };
 	static MousePos GetMousePosition() { return mousePos; };
 	static void AllowTextInput(bool allow) { allowTextInput = allow; };
-	static void ResetInputString() { textInput.clear(); }
+	static void ResetInputString() { textInputCharSizes.clear(); textInputString = ""; }
 	static std::string GetInputString();
 	static void SetMousePosition(MousePos _newPos);
 	static void SetCursorVisible(bool _visible);
+	static float GetDeadzone(JoystickID jID, int sID);
+	static void SetDeadzone(JoystickID jID, int sID, float dz);
+	static std::string GetDeviceName(DeviceID id);
+	static bool GetDeviceAvailable(DeviceID id);
+	static float GetStickValue(JoystickDeviceID id, int sID, bool raw = true);
 
 private:
 
@@ -504,7 +536,9 @@ private:
 	static std::vector<StickNotify> mouseAxisNotifs;
 	static std::vector<JoystickDevice> joystickDevices;
 	static DeviceID lastUsedDevice;
-	static std::list<std::string> textInput;
+	static Key lastUsedKey;
+	static std::list<size_t> textInputCharSizes;
+	static std::string textInputString;
 	static bool allowTextInput;
 
 	static void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mods);
@@ -615,6 +649,7 @@ public:
 		void SetActionKey(std::string name, Input::Key key);
 		void SetActionKey(std::string name, std::vector<Input::Key>& key);
 		void SetActionListening(std::string name);
+		std::vector<Key> GetActionKeys(std::string name);
 		std::string GetActionKeyString(std::string name);
 
 		// args can be one of these :
@@ -640,21 +675,22 @@ public:
 		void SetAxisKey(std::string name, Input::Key key);
 		void SetAxisKey(std::string name, Input::Key forwardKey, Input::Key backwardKey);
 		void SetAxisListening(std::string name, AxisListeningMode mode);
+		std::pair<Input::Key, Input::Key> GetAxisKeys(std::string name);
 		std::string GetAxisKeyString(std::string name);
 
 		// args can be one of these :
-		// - Bind("name", Input::Mode, &obj, &class::member)
-		// - Bind("name", Input::Mode, &function)
-		// - Bind("name", Input::Mode, +[]{}), you won't be able to unbind lambdas unless your stored them, ex : auto lambda = +[]{};
-		// - Bind("name", Input::Mode, [&]{}), be carefull with capturing lambdas as you won't be able to unbind them
+		// - Bind("name", &obj, &class::member)
+		// - Bind("name", &function)
+		// - Bind("name", +[]{}), you won't be able to unbind lambdas unless your stored them, ex : auto lambda = +[]{};
+		// - Bind("name", [&]{}), be carefull with capturing lambdas as you won't be able to unbind them
 		// function signature must be void func(float, float)
 		template<typename... Types>
 		void BindAxis(std::string name, Types... args);
 
 		// args can be one of these :
-		// - Bind("name", Input::Mode, &obj, &class::member)
-		// - Bind("name", Input::Mode, &function)
-		// - Bind("name", Input::Mode, &lambda), you won't be able to unbind lambdas unless your stored them, ex : auto lambda = +[]{};
+		// - Bind("name", &obj, &class::member)
+		// - Bind("name", &function)
+		// - Bind("name", &lambda), you won't be able to unbind lambdas unless your stored them, ex : auto lambda = +[]{};
 		template<typename... Types>
 		void UnbindAxis(std::string name, Types... args);
 
@@ -662,7 +698,7 @@ public:
 
 private:
 
-	static std::vector<Instance> globalInstances;
+	static std::vector<Instance*> globalInstances;
 	static Input::KeyNotifyFinder::Device* listener;
 	static int maxButtons;
 	static int maxHats;

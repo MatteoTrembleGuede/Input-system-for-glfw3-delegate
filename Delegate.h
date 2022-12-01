@@ -151,7 +151,7 @@ public:
 	void Bind(std::function<void(B...)> lambda);
 
 
-	void operator()(B... args);
+	virtual void operator()(B... args);
 };
 
 DeclareDelegate(Notify); // simple on action call of functions with no parameters and no return value

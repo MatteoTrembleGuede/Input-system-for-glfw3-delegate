@@ -17,7 +17,7 @@
 #define mouseAxis data[0].ma
 
 Input::KeyboardLayout Input::keyboardLayout;
-std::vector<Input::Instance> Input::globalInstances;
+std::vector<Input::Instance*> Input::globalInstances;
 std::vector<Input::KeyNotify> Input::keyNotifs;
 std::vector<Input::StickNotify> Input::mouseAxisNotifs;
 Input::KeyNotifyFinder Input::notifFinder;
@@ -31,8 +31,10 @@ int Input::maxHats;
 int Input::maxSticks;
 Input::MousePos Input::mousePos;
 Input::MousePos Input::lastMouseDelta;
-std::list<std::string> Input::textInput;
+std::list<size_t> Input::textInputCharSizes;
 bool Input::allowTextInput;
+std::string Input::textInputString;
+Input::Key Input::lastUsedKey;
 
 std::string Input::Key::KeyToString() const
 {
@@ -40,135 +42,135 @@ std::string Input::Key::KeyToString() const
 	if (kName) return kName;
 	switch (keyID)
 	{
-	case Input::KeyVal::SPACE: return "space";
-	case Input::KeyVal::APOSTROPHE: return "'";
-	case Input::KeyVal::COMMA: return ",";
-	case Input::KeyVal::MINUS: return "-";
-	case Input::KeyVal::PERIOD: return ".";
-	case Input::KeyVal::SLASH: return "/";
-	case Input::KeyVal::NUM0: return "num0";
-	case Input::KeyVal::NUM1: return "num1";
-	case Input::KeyVal::NUM2: return "num2";
-	case Input::KeyVal::NUM3: return "num3";
-	case Input::KeyVal::NUM4: return "num4";
-	case Input::KeyVal::NUM5: return "num5";
-	case Input::KeyVal::NUM6: return "num6";
-	case Input::KeyVal::NUM7: return "num7";
-	case Input::KeyVal::NUM8: return "num8";
-	case Input::KeyVal::NUM9: return "num9";
-	case Input::KeyVal::COLON: return ";";
-	case Input::KeyVal::SEMICOLON: return ":";
-	case Input::KeyVal::LESSER: return "<";
-	case Input::KeyVal::EQUAL: return "=";
-	case Input::KeyVal::A: return "A";
-	case Input::KeyVal::B: return "B";
-	case Input::KeyVal::C: return "C";
-	case Input::KeyVal::D: return "D";
-	case Input::KeyVal::E: return "E";
-	case Input::KeyVal::F: return "F";
-	case Input::KeyVal::G: return "G";
-	case Input::KeyVal::H: return "H";
-	case Input::KeyVal::I: return "I";
-	case Input::KeyVal::J: return "J";
-	case Input::KeyVal::K: return "K";
-	case Input::KeyVal::L: return "L";
-	case Input::KeyVal::M: return "M";
-	case Input::KeyVal::N: return "N";
-	case Input::KeyVal::O: return "O";
-	case Input::KeyVal::P: return "P";
-	case Input::KeyVal::Q: return "Q";
-	case Input::KeyVal::R: return "R";
-	case Input::KeyVal::S: return "S";
-	case Input::KeyVal::T: return "T";
-	case Input::KeyVal::U: return "U";
-	case Input::KeyVal::V: return "V";
-	case Input::KeyVal::W: return "W";
-	case Input::KeyVal::X: return "X";
-	case Input::KeyVal::Y: return "Y";
-	case Input::KeyVal::Z: return "Z";
-	case Input::KeyVal::LEFT_BRACKET: return "[";
-	case Input::KeyVal::BACKSLASH: return "\\";
-	case Input::KeyVal::RIGHT_BRACKET: return "]";
-	case Input::KeyVal::GRAVE_ACCENT: return "`";
-	case Input::KeyVal::WORLD_1: return "W1";
-	case Input::KeyVal::WORLD_2: return "W2";
-	case Input::KeyVal::ESCAPE: return "esc";
-	case Input::KeyVal::ENTER: return "enter";
-	case Input::KeyVal::TAB: return "tab";
-	case Input::KeyVal::BACKSPACE: return "backspace";
-	case Input::KeyVal::INSERT: return "insert";
-	case Input::KeyVal::DEL: return "delete";
-	case Input::KeyVal::RIGHT: return "right";
-	case Input::KeyVal::LEFT: return "left";
-	case Input::KeyVal::DOWN: return "down";
-	case Input::KeyVal::UP: return "up";
-	case Input::KeyVal::PAGE_UP: return "pgup";
-	case Input::KeyVal::PAGE_DOWN: return "pgdown";
-	case Input::KeyVal::HOME: return "home";
-	case Input::KeyVal::END: return "end";
-	case Input::KeyVal::CAPS_LOCK: return "capslock";
-	case Input::KeyVal::SCROLL_LOCK: return "scrolllock";
-	case Input::KeyVal::NUM_LOCK: return "numlock";
-	case Input::KeyVal::PRINT_SCREEN: return "printscreen";
-	case Input::KeyVal::PAUSE: return "pause";
-	case Input::KeyVal::F1: return "F1";
-	case Input::KeyVal::F2: return "F2";
-	case Input::KeyVal::F3: return "F3";
-	case Input::KeyVal::F4: return "F4";
-	case Input::KeyVal::F5: return "F5";
-	case Input::KeyVal::F6: return "F6";
-	case Input::KeyVal::F7: return "F7";
-	case Input::KeyVal::F8: return "F8";
-	case Input::KeyVal::F9: return "F9";
-	case Input::KeyVal::F10: return "F10";
-	case Input::KeyVal::F11: return "F11";
-	case Input::KeyVal::F12: return "F12";
-	case Input::KeyVal::F13: return "F13";
-	case Input::KeyVal::F14: return "F14";
-	case Input::KeyVal::F15: return "F15";
-	case Input::KeyVal::F16: return "F16";
-	case Input::KeyVal::F17: return "F17";
-	case Input::KeyVal::F18: return "F18";
-	case Input::KeyVal::F19: return "F19";
-	case Input::KeyVal::F20: return "F20";
-	case Input::KeyVal::F21: return "F21";
-	case Input::KeyVal::F22: return "F22";
-	case Input::KeyVal::F23: return "F23";
-	case Input::KeyVal::F24: return "F24";
-	case Input::KeyVal::F25: return "F25";
-	case Input::KeyVal::KP_0: return "numpad0";
-	case Input::KeyVal::KP_1: return "numpad1";
-	case Input::KeyVal::KP_2: return "numpad2";
-	case Input::KeyVal::KP_3: return "numpad3";
-	case Input::KeyVal::KP_4: return "numpad4";
-	case Input::KeyVal::KP_5: return "numpad5";
-	case Input::KeyVal::KP_6: return "numpad6";
-	case Input::KeyVal::KP_7: return "numpad7";
-	case Input::KeyVal::KP_8: return "numpad8";
-	case Input::KeyVal::KP_9: return "numpad9";
-	case Input::KeyVal::KP_DECIMAL: return "numpaddec";
-	case Input::KeyVal::KP_DIVIDE: return "numpad/";
-	case Input::KeyVal::KP_MULTIPLY: return "numpad*";
-	case Input::KeyVal::KP_SUBTRACT: return "numpad-";
-	case Input::KeyVal::KP_ADD: return "numpad+";
-	case Input::KeyVal::KP_ENTER: return "numpadenter";
-	case Input::KeyVal::KP_EQUAL: return "numpad=";
-	case Input::KeyVal::LEFT_SHIFT: return "LShift";
-	case Input::KeyVal::LEFT_CONTROL: return "LCtrl";
-	case Input::KeyVal::LEFT_ALT: return "LAlt";
-	case Input::KeyVal::LEFT_SUPER: return "LSup";
-	case Input::KeyVal::RIGHT_SHIFT: return "RShift";
-	case Input::KeyVal::RIGHT_CONTROL: return "RCtrl";
-	case Input::KeyVal::RIGHT_ALT: return "RAlt";
-	case Input::KeyVal::RIGHT_SUPER: return "RSup";
-	case Input::KeyVal::MENU: return "Menu";
-	case Input::KeyVal::MOUSE0: return "leftclick";
-	case Input::KeyVal::MOUSE1: return "rightclick";
-	case Input::KeyVal::MOUSE2: return "middleclick";
-	case Input::KeyVal::MOUSEWUP: return "wheelup";
-	case Input::KeyVal::MOUSEWDOWN: return "wheeldown";
-	case Input::KeyVal::MOUSEWLEFT: return "wheelleft";
-	case Input::KeyVal::MOUSEWRIGHT: return "wheelright";
+	case Input::KeyCode::SPACE: return "space";
+	case Input::KeyCode::APOSTROPHE: return "'";
+	case Input::KeyCode::COMMA: return ",";
+	case Input::KeyCode::MINUS: return "-";
+	case Input::KeyCode::PERIOD: return ".";
+	case Input::KeyCode::SLASH: return "/";
+	case Input::KeyCode::NUM0: return "num0";
+	case Input::KeyCode::NUM1: return "num1";
+	case Input::KeyCode::NUM2: return "num2";
+	case Input::KeyCode::NUM3: return "num3";
+	case Input::KeyCode::NUM4: return "num4";
+	case Input::KeyCode::NUM5: return "num5";
+	case Input::KeyCode::NUM6: return "num6";
+	case Input::KeyCode::NUM7: return "num7";
+	case Input::KeyCode::NUM8: return "num8";
+	case Input::KeyCode::NUM9: return "num9";
+	case Input::KeyCode::COLON: return ";";
+	case Input::KeyCode::SEMICOLON: return ":";
+	case Input::KeyCode::LESSER: return "<";
+	case Input::KeyCode::EQUAL: return "=";
+	case Input::KeyCode::A: return "A";
+	case Input::KeyCode::B: return "B";
+	case Input::KeyCode::C: return "C";
+	case Input::KeyCode::D: return "D";
+	case Input::KeyCode::E: return "E";
+	case Input::KeyCode::F: return "F";
+	case Input::KeyCode::G: return "G";
+	case Input::KeyCode::H: return "H";
+	case Input::KeyCode::I: return "I";
+	case Input::KeyCode::J: return "J";
+	case Input::KeyCode::K: return "K";
+	case Input::KeyCode::L: return "L";
+	case Input::KeyCode::M: return "M";
+	case Input::KeyCode::N: return "N";
+	case Input::KeyCode::O: return "O";
+	case Input::KeyCode::P: return "P";
+	case Input::KeyCode::Q: return "Q";
+	case Input::KeyCode::R: return "R";
+	case Input::KeyCode::S: return "S";
+	case Input::KeyCode::T: return "T";
+	case Input::KeyCode::U: return "U";
+	case Input::KeyCode::V: return "V";
+	case Input::KeyCode::W: return "W";
+	case Input::KeyCode::X: return "X";
+	case Input::KeyCode::Y: return "Y";
+	case Input::KeyCode::Z: return "Z";
+	case Input::KeyCode::LEFT_BRACKET: return "[";
+	case Input::KeyCode::BACKSLASH: return "\\";
+	case Input::KeyCode::RIGHT_BRACKET: return "]";
+	case Input::KeyCode::GRAVE_ACCENT: return "`";
+	case Input::KeyCode::WORLD_1: return "W1";
+	case Input::KeyCode::WORLD_2: return "W2";
+	case Input::KeyCode::ESCAPE: return "esc";
+	case Input::KeyCode::ENTER: return "enter";
+	case Input::KeyCode::TAB: return "tab";
+	case Input::KeyCode::BACKSPACE: return "backspace";
+	case Input::KeyCode::INSERT: return "insert";
+	case Input::KeyCode::DEL: return "delete";
+	case Input::KeyCode::RIGHT: return "right";
+	case Input::KeyCode::LEFT: return "left";
+	case Input::KeyCode::DOWN: return "down";
+	case Input::KeyCode::UP: return "up";
+	case Input::KeyCode::PAGE_UP: return "pgup";
+	case Input::KeyCode::PAGE_DOWN: return "pgdown";
+	case Input::KeyCode::HOME: return "home";
+	case Input::KeyCode::END: return "end";
+	case Input::KeyCode::CAPS_LOCK: return "capslock";
+	case Input::KeyCode::SCROLL_LOCK: return "scrolllock";
+	case Input::KeyCode::NUM_LOCK: return "numlock";
+	case Input::KeyCode::PRINT_SCREEN: return "printscreen";
+	case Input::KeyCode::PAUSE: return "pause";
+	case Input::KeyCode::F1: return "F1";
+	case Input::KeyCode::F2: return "F2";
+	case Input::KeyCode::F3: return "F3";
+	case Input::KeyCode::F4: return "F4";
+	case Input::KeyCode::F5: return "F5";
+	case Input::KeyCode::F6: return "F6";
+	case Input::KeyCode::F7: return "F7";
+	case Input::KeyCode::F8: return "F8";
+	case Input::KeyCode::F9: return "F9";
+	case Input::KeyCode::F10: return "F10";
+	case Input::KeyCode::F11: return "F11";
+	case Input::KeyCode::F12: return "F12";
+	case Input::KeyCode::F13: return "F13";
+	case Input::KeyCode::F14: return "F14";
+	case Input::KeyCode::F15: return "F15";
+	case Input::KeyCode::F16: return "F16";
+	case Input::KeyCode::F17: return "F17";
+	case Input::KeyCode::F18: return "F18";
+	case Input::KeyCode::F19: return "F19";
+	case Input::KeyCode::F20: return "F20";
+	case Input::KeyCode::F21: return "F21";
+	case Input::KeyCode::F22: return "F22";
+	case Input::KeyCode::F23: return "F23";
+	case Input::KeyCode::F24: return "F24";
+	case Input::KeyCode::F25: return "F25";
+	case Input::KeyCode::KP_0: return "numpad0";
+	case Input::KeyCode::KP_1: return "numpad1";
+	case Input::KeyCode::KP_2: return "numpad2";
+	case Input::KeyCode::KP_3: return "numpad3";
+	case Input::KeyCode::KP_4: return "numpad4";
+	case Input::KeyCode::KP_5: return "numpad5";
+	case Input::KeyCode::KP_6: return "numpad6";
+	case Input::KeyCode::KP_7: return "numpad7";
+	case Input::KeyCode::KP_8: return "numpad8";
+	case Input::KeyCode::KP_9: return "numpad9";
+	case Input::KeyCode::KP_DECIMAL: return "numpaddec";
+	case Input::KeyCode::KP_DIVIDE: return "numpad/";
+	case Input::KeyCode::KP_MULTIPLY: return "numpad*";
+	case Input::KeyCode::KP_SUBTRACT: return "numpad-";
+	case Input::KeyCode::KP_ADD: return "numpad+";
+	case Input::KeyCode::KP_ENTER: return "numpadenter";
+	case Input::KeyCode::KP_EQUAL: return "numpad=";
+	case Input::KeyCode::LEFT_SHIFT: return "LShift";
+	case Input::KeyCode::LEFT_CONTROL: return "LCtrl";
+	case Input::KeyCode::LEFT_ALT: return "LAlt";
+	case Input::KeyCode::LEFT_SUPER: return "LSup";
+	case Input::KeyCode::RIGHT_SHIFT: return "RShift";
+	case Input::KeyCode::RIGHT_CONTROL: return "RCtrl";
+	case Input::KeyCode::RIGHT_ALT: return "RAlt";
+	case Input::KeyCode::RIGHT_SUPER: return "RSup";
+	case Input::KeyCode::MENU: return "Menu";
+	case Input::KeyCode::MOUSE0: return "leftclick";
+	case Input::KeyCode::MOUSE1: return "rightclick";
+	case Input::KeyCode::MOUSE2: return "middleclick";
+	case Input::KeyCode::MOUSEWUP: return "wheelup";
+	case Input::KeyCode::MOUSEWDOWN: return "wheeldown";
+	case Input::KeyCode::MOUSEWLEFT: return "wheelleft";
+	case Input::KeyCode::MOUSEWRIGHT: return "wheelright";
 	default: return "unknown";
 	}
 }
@@ -276,6 +278,11 @@ void Input::Action::ClearKeys()
 	KeyStates.clear();
 }
 
+Input::Action::~Action()
+{
+	Unbind();
+}
+
 void Input::Action::Unbind()
 {
 	Input::eventExecutor.Unbind(this, &Input::Action::ExecuteHold);
@@ -308,6 +315,18 @@ std::string Input::Action::GetKeyString()
 	}
 
 	return keyStr;
+}
+
+std::vector<Input::Key> Input::Action::GetKeys()
+{
+	std::vector<Key> tmp;
+
+	for (auto k : KeyStates)
+	{
+		tmp.push_back(k.first);
+	}
+
+	return tmp;
 }
 
 void Input::Action::ExecuteHold()
@@ -365,14 +384,11 @@ void Input::JoystickDevice::ConfigureJoystick()
 
 	if (tmpName == name) return;
 
-	int axisCount;
-	glfwGetJoystickAxes(id, &axisCount);
-	if (axisCount > maxSticks) maxSticks = axisCount;
-	int buttonCount;
-	glfwGetJoystickButtons(id, &buttonCount);
+	axes = glfwGetJoystickAxes(id, &axesCount);
+	if (axesCount > maxSticks) maxSticks = axesCount;
+	buttons = glfwGetJoystickButtons(id, &buttonCount);
 	if (buttonCount > maxButtons) maxButtons = buttonCount;
-	int hatCount;
-	glfwGetJoystickHats(id, &hatCount);
+	hats = glfwGetJoystickHats(id, &hatCount);
 	if (hatCount > maxHats) maxHats = hatCount;
 
 	name = tmpName;
@@ -388,7 +404,7 @@ void Input::JoystickDevice::ConfigureJoystick()
 	hatNotifs[Down].clear();
 	hatNotifs[Left].clear();
 
-	for (int x = 0; x < axisCount; ++x)
+	for (int x = 0; x < axesCount; ++x)
 	{
 		stickValues.push_back(0);
 		deadZones.push_back(0.25f);
@@ -429,22 +445,32 @@ void Input::JoystickDevice::UpdateSticks()
 {
 	JoystickDeviceID jID(id);
 	JoystickDeviceID jIDAny(Any);
-	int axisCount;
-	const float* axis = glfwGetJoystickAxes(id, &axisCount);
-	for (int x = 0; x < axisCount; ++x)
+	for (int x = 0; x < axesCount; ++x)
 	{
-		if (axis[x] != stickValues[x])
+		if (axes[x] != stickValues[x])
 		{
 			Key kf(x, Forward);
 			Key kb(x, Backward);
+
+			float livZone = 1.0f / (1.0f - deadZones[x]);
+			float absValN = max(0.0f, min((fabs(axes[x]) - deadZones[x]) * livZone, 1.0f));
+			float absValO = max(0.0f, min((fabs(stickValues[x]) - deadZones[x]) * livZone, 1.0f));
+			float valN = (axes[x] < 0.0f ? -absValN : absValN);
+			float valO = (stickValues[x] < 0.0f ? -absValO : absValO);
+
 			bool lastFor = stickValues[x] > deadZones[x];
 			bool lastBak = -stickValues[x] > deadZones[x];
-			bool currentFor = axis[x] > deadZones[x];
-			bool currentBak = -axis[x] > deadZones[x];
-			stickNotifFinder[jID][kf](kf, axis[x], stickValues[x]);
-			stickNotifFinder[jID][kb](kb, -axis[x], -stickValues[x]);
-			stickNotifFinder[jIDAny][kf](kf, axis[x], stickValues[x]);
-			stickNotifFinder[jIDAny][kb](kb, -axis[x], -stickValues[x]);
+			bool currentFor = axes[x] > deadZones[x];
+			bool currentBak = -axes[x] > deadZones[x];
+
+			if (valN != valO)
+			{
+				stickNotifFinder[jID][kf](kf, valN, valO);
+				stickNotifFinder[jID][kb](kb, -valN, -valO);
+				stickNotifFinder[jIDAny][kf](kf, valN, valO);
+				stickNotifFinder[jIDAny][kb](kb, -valN, -valO);
+			}
+
 			if (lastFor != currentFor)
 			{
 				if (lastFor)
@@ -471,7 +497,7 @@ void Input::JoystickDevice::UpdateSticks()
 					notifFinder[jIDAny][kb](kb, Input::Mode::Press);
 				}
 			}
-			stickValues[x] = axis[x];
+			stickValues[x] = axes[x];
 		}
 	}
 }
@@ -480,11 +506,12 @@ void Input::JoystickDevice::UpdateButtons()
 {
 	JoystickDeviceID jID(id);
 	JoystickDeviceID jIDAny(Any);
-	int buttonCount;
-	const unsigned char* button = glfwGetJoystickButtons(id, &buttonCount);
+
+	buttons = glfwGetJoystickButtons(id, &buttonCount);
+
 	for (int x = 0; x < buttonCount; ++x)
 	{
-		bool pressed = button[x] == GLFW_PRESS;
+		bool pressed = buttons[x] == GLFW_PRESS;
 		if (pressed != buttonValues[x])
 		{
 			Key k(x);
@@ -507,17 +534,15 @@ void Input::JoystickDevice::UpdateHats()
 {
 	JoystickDeviceID jID(id);
 	JoystickDeviceID jIDAny(Any);
-	int hatCount;
-	const unsigned char* hat = glfwGetJoystickHats(id, &hatCount);
 	for (int x = 0; x < hatCount; ++x)
 	{
-		if (hatValues[x] != hat[x])
+		if (hatValues[x] != hats[x])
 		{
-			unsigned char diffMask = hatValues[x] ^ hat[x];
+			unsigned char diffMask = hatValues[x] ^ hats[x];
 			unsigned char wasPressedMask = diffMask & hatValues[x];
-			unsigned char isPressedMask = diffMask & hat[x];
+			unsigned char isPressedMask = diffMask & hats[x];
 
-			if (wasPressedMask || isPressedMask)
+			if (diffMask)
 			{
 				for (int i = 0; i < 4; ++i)
 				{
@@ -534,7 +559,7 @@ void Input::JoystickDevice::UpdateHats()
 					}
 				}
 			}
-			hatValues[x] = hat[x];
+			hatValues[x] = hats[x];
 		}
 	}
 }
@@ -544,7 +569,7 @@ void Input::Init()
 	maxButtons = 64;
 	maxHats = 64;
 	maxSticks = 64;
-	for (int i = 0; i < KeyVal::Count; ++i)
+	for (int i = 0; i < KeyCode::Count; ++i)
 		keyNotifs.push_back(Input::KeyNotify());
 
 	mouseAxisNotifs.push_back(Input::StickNotify());
@@ -559,11 +584,11 @@ void Input::Init()
 	}
 
 	std::string testKeyboardLayout;
-	if ((testKeyboardLayout = glfwGetKeyName(Input::KeyVal::W, 0)) == "w")
+	if ((testKeyboardLayout = glfwGetKeyName(Input::KeyCode::W, 0)) == "w")
 	{
 		keyboardLayout = KeyboardLayout::QWERTY;
 	}
-	else if ((testKeyboardLayout = glfwGetKeyName(Input::KeyVal::A, 0)) == "a")
+	else if ((testKeyboardLayout = glfwGetKeyName(Input::KeyCode::A, 0)) == "a")
 	{
 		keyboardLayout = KeyboardLayout::DVORAK;
 	}
@@ -575,12 +600,14 @@ void Input::Init()
 	{
 		keyboardLayout = KeyboardLayout::UNKNOWNKEYBOARD;
 	}
+
 	lastUsedDevice = KeyBoardDeviceID();
 	listener = nullptr;
 	allowTextInput = false;
 	std::setlocale(LC_ALL, "en_US.utf8");
 	if (glfwRawMouseMotionSupported())
 		glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+
 	CheckJoysticks();
 	UpdateJoysticks();
 	glfwSetKeyCallback(window, &Input::Key_Callback);
@@ -645,9 +672,7 @@ void Input::PollEvents()
 
 std::string Input::GetInputString()
 {
-	std::string tmp;
-	for (std::string& str : textInput) tmp += str;
-	return tmp;
+	return textInputString;
 }
 
 void Input::SetMousePosition(MousePos _newPos)
@@ -666,6 +691,58 @@ void Input::SetCursorVisible(bool _visible)
 	{
 		glfwSetInputMode(glfwGetCurrentContext(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	}
+}
+
+float Input::GetDeadzone(JoystickID jID, int sID)
+{
+	return joystickDevices[jID].GetDeadzone(sID);
+}
+
+void Input::SetDeadzone(JoystickID jID, int sID, float dz)
+{
+	joystickDevices[jID].SetDeadzone(sID, dz);
+}
+
+std::string Input::GetDeviceName(DeviceID id)
+{
+	switch (id.type)
+	{
+	case Keyboard:
+		return id.ToString();
+		break;
+	case Joystick:
+		return joystickDevices[id.jID].GetName();
+		break;
+	}
+}
+
+bool Input::GetDeviceAvailable(DeviceID id)
+{
+	switch (id.type)
+	{
+	case Keyboard:
+		return true;
+		break;
+	case Joystick:
+		return joystickDevices[id.jID].connected;
+		break;
+	}
+}
+
+float Input::GetStickValue(JoystickDeviceID id, int sID, bool raw)
+{
+	if (id.jID >= J0 && id.jID <= Any && joystickDevices[id.jID].connected)
+	{
+		float val = joystickDevices[id.jID].GetStickValue(sID);
+		if (!raw)
+		{
+			float dz = joystickDevices[id.jID].GetDeadzone(sID);
+			float lz = 1.0f / (1.0 - dz);
+			val = max(0.0f, min((fabs(val) - dz) * lz, 1.0f)) * (val < 0 ? -1 : 1);
+		}
+		return val;
+	}
+	return 0.0f;
 }
 
 void Input::Instance::AddAction(std::string name, Input::Key defaultKeyID)
@@ -736,19 +813,32 @@ void Input::Instance::SetActionListening(std::string name)
 	deviceNotifFinder.SetListening(&action->second);
 }
 
+std::vector<Input::Key> Input::Instance::GetActionKeys(std::string name)
+{
+	auto action = actions.find(name);
+	if (action == actions.end()) return std::vector<Input::Key>();
+	return action->second.GetKeys();
+}
+
 void Input::Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	if (allowTextInput && (action == Press || action == Hold))
 	{
-		if (key == KeyVal::BACKSPACE && textInput.size() > 0)
-			textInput.pop_back();
-		else if (key == KeyVal::ENTER || key == KeyVal::KP_ENTER)
-			textInput.push_back("\n");
+		if (key == KeyCode::BACKSPACE && textInputCharSizes.size() > 0)
+		{
+			textInputString = std::string(textInputString.c_str(), textInputString.size() - textInputCharSizes.back());
+			textInputCharSizes.pop_back();
+		}
+		else if (key == KeyCode::ENTER || key == KeyCode::KP_ENTER)
+		{
+			textInputString += "\n";
+			textInputCharSizes.push_back(1);
+		}
 	}
 
-	if (key >= 0 && key < KeyVal::Count)
+	if (key >= 0 && key < KeyCode::Count)
 	{
-		Key k = Key((Input::KeyVal)key);
+		Key k = Key((Input::KeyCode)key);
 		if (action < Mode::Hold)
 		{
 			notifFinder[KeyBoardDeviceID()][k](k, (Input::Mode)action);
@@ -758,9 +848,9 @@ void Input::Key_Callback(GLFWwindow* window, int key, int scancode, int action, 
 
 void Input::MouseButton_Callback(GLFWwindow* window, int button, int action, int mods)
 {
-	if (button >= 0 && button < KeyVal::Count)
+	if (button >= 0 && button < KeyCode::Count)
 	{
-		Key k = Key((Input::KeyVal)(button + Input::KeyVal::MOUSE0));
+		Key k = Key((Input::KeyCode)(button + Input::KeyCode::MOUSE0));
 		if (action < Mode::Hold)
 		{
 			notifFinder[KeyBoardDeviceID()][k](k, (Input::Mode)action);
@@ -770,18 +860,24 @@ void Input::MouseButton_Callback(GLFWwindow* window, int button, int action, int
 
 void Input::MouseWheel_Callback(GLFWwindow* window, double x, double y)
 {
-	Key ky = Input::Key(0);
-	Key kx = Input::Key(0);
+	Key ky = Input::Key(KeyCode(0));
+	Key kx = Input::Key(KeyCode(0));
 
-	if (y > 0) ky = Key((Input::KeyVal)(Input::KeyVal::MOUSEWUP));
-	else if(y < 0) ky = Key((Input::KeyVal)(Input::KeyVal::MOUSEWDOWN));
-	notifFinder[KeyBoardDeviceID()][ky](ky, Input::Mode::Press);
-	notifFinder[KeyBoardDeviceID()][ky](ky, Input::Mode::Release);
+	if (y != 0.0)
+	{
+		if (y > 0) ky = Key((Input::KeyCode)(Input::KeyCode::MOUSEWUP));
+		else if (y < 0) ky = Key((Input::KeyCode)(Input::KeyCode::MOUSEWDOWN));
+		notifFinder[KeyBoardDeviceID()][ky](ky, Input::Mode::Press);
+		notifFinder[KeyBoardDeviceID()][ky](ky, Input::Mode::Release);
+	}
 
-	if (x > 0) kx = Key((Input::KeyVal)(Input::KeyVal::MOUSEWRIGHT));
-	else if(x < 0) kx = Key((Input::KeyVal)(Input::KeyVal::MOUSEWLEFT));
-	notifFinder[KeyBoardDeviceID()][kx](kx, Input::Mode::Press);
-	notifFinder[KeyBoardDeviceID()][kx](kx, Input::Mode::Release);
+	if (x != 0.0)
+	{
+		if (x > 0) kx = Key((Input::KeyCode)(Input::KeyCode::MOUSEWRIGHT));
+		else if (x < 0) kx = Key((Input::KeyCode)(Input::KeyCode::MOUSEWLEFT));
+		notifFinder[KeyBoardDeviceID()][kx](kx, Input::Mode::Press);
+		notifFinder[KeyBoardDeviceID()][kx](kx, Input::Mode::Release);
+	}
 }
 
 void Input::JoystickConnection_Callback(int ID, int status)
@@ -800,12 +896,15 @@ void Input::UnicodeChar_Callback(GLFWwindow* window, unsigned int character)
 		std::wstring tmp;
 		tmp = character;
 
-		bool shifts = std::wctomb(nullptr, 0);  // reset the conversion state
+		// got it from this thread https://stackoverflow.com/questions/4339960/how-do-i-convert-wchar-t-to-stdstring
+		bool shifts = std::wctomb(nullptr, 0);
 		std::array<char, 7> buffer;
 		const int ret = std::wctomb(buffer.data(), character);
 		if (ret < 0) throw std::invalid_argument("inconvertible wide characters in the current locale");
-		buffer[ret] = '\0';  // make 'buffer' contain a C-style string
-		textInput.push_back(std::string(buffer.data()));
+		buffer[ret] = '\0';
+		std::string str = std::string(buffer.data());
+		textInputCharSizes.push_back(str.size());
+		textInputString += str;
 	}
 }
 
@@ -813,15 +912,15 @@ Input::Instance& Input::GetGlobalInput(int i)
 {
 	if (i >= 0 && i < globalInstances.size())
 	{
-		return globalInstances[i];
+		return *globalInstances[i];
 	}
 	else if (i >= globalInstances.size())
 	{
 		for (int x = globalInstances.size(); x <= i; ++x)
 		{
-			globalInstances.push_back(Instance(Input::KeyBoardDeviceID()));
+			globalInstances.push_back(new Instance(Input::KeyBoardDeviceID()));
 		}
-		return globalInstances[i];
+		return *globalInstances[i];
 	}
 	throw std::out_of_range("tried to access a negative id global Input::Instance");
 }
@@ -924,9 +1023,10 @@ Input::Instance::Instance(Input::DeviceID _defaultDevice) :
 Input::KeyNotifyFinder::Device::Device(const DeviceID& d)
 {
 	id = d;
-	//listener.Bind(this, &Input::KeyNotifyFinder::Device::Listen);
 	listening = false;
 	listenAction = nullptr;
+	listenAxis = nullptr;
+	axisListeningMode = Input::AxisListeningMode::OnlyForward;
 }
 
 bool Input::KeyNotifyFinder::Device::IsValidInput(Input::Key& key)
@@ -981,7 +1081,7 @@ void Input::KeyNotifyFinder::Device::Listen(Input::Key& key, Input::Mode mode)
 	}
 }
 
-Input::Key::Key(Input::KeyVal kID)
+Input::Key::Key(Input::KeyCode kID)
 {
 	keyID = kID;
 	type = Input::KeyType::KKey;
@@ -1056,14 +1156,14 @@ Input::Key Input::Key::MakeFromString(std::string keyStr)
 	}
 	else
 	{
-		for (Input::KeyVal v = Input::KeyVal::SPACE; v < Input::KeyVal::Count; v = (Input::KeyVal)(v + 1))
+		for (Input::KeyCode v = Input::KeyCode::SPACE; v < Input::KeyCode::Count; v = (Input::KeyCode)(v + 1))
 		{
 			Input::Key k = Input::Key(v);
 			if (k.ToString() == keyStr) return k;
 		}
 	}
 	MessageBoxA(nullptr, (keyStr + " : key name doesn't match").c_str(), "error", MB_ICONERROR | MB_OK);
-	return Input::Key((Input::KeyVal)0);
+	return Input::Key((Input::KeyCode)0);
 }
 
 std::string Input::Key::ToString() const
@@ -1329,6 +1429,19 @@ bool Input::DeviceID::IsValidInput(Input::Key& key)
 	}
 }
 
+std::string Input::DeviceID::ToString()
+{
+	switch (type)
+	{
+	case Keyboard:
+		return "Keyboard";
+		break;
+	case Joystick:
+		return std::string("Joystick ") + std::to_string(jID);
+		break;
+	}
+}
+
 Input::BindSet::BindSet() : device(KeyBoardDeviceID())
 {
 }
@@ -1360,7 +1473,7 @@ Input::BindSet::BindSet(std::string path) : BindSet()
 				continue;
 			}
 			else if (line == "") break;
-			
+
 			if (readingAxes) axes.push_back(AxisDescriptor().SetFromString(line));
 			else actions.push_back(ActionDescriptor().SetFromString(line));
 		}
@@ -1542,7 +1655,8 @@ void Input::Axis::KeyCallback(Input::Key& key, Input::Mode _mode)
 
 void Input::Axis::StickCallback(Input::Key& key, float _currentValue, float _lastValue)
 {
-	if (key == forwardKey)
+	bool isfor = key == forwardKey;
+	if (isfor)
 	{
 		currentValue = _currentValue;
 		lastValue = _lastValue;
@@ -1552,15 +1666,17 @@ void Input::Axis::StickCallback(Input::Key& key, float _currentValue, float _las
 		currentValue = -_currentValue;
 		lastValue = -_lastValue;
 	}
-	
+
 	if (currentValue == 0.0f)
 	{
 		Input::eventExecutor.Unbind(this, &Input::Axis::Execute);
 		Input::eventExecutor.Bind(this, &Input::Axis::ExecuteOnce);
+		isBound = false;
 	}
-	else if (lastValue == 0.0f)
+	else if (!isBound)
 	{
 		Input::eventExecutor.Bind(this, &Input::Axis::Execute);
+		isBound = true;
 	}
 }
 
@@ -1575,11 +1691,16 @@ void Input::Axis::ExecuteOnce()
 	Input::eventExecutor.Unbind(this, &Input::Axis::ExecuteOnce);
 }
 
+Input::Axis::~Axis()
+{
+	Unbind();
+}
+
 void Input::Axis::Unbind()
 {
 	Input::eventExecutor.Unbind(this, &Input::Axis::Execute);
 	Input::eventExecutor.Unbind(this, &Input::Axis::ExecuteOnce);
-	
+
 	if (forwardKey.GetType() == MAxis || forwardKey.GetType() == JStick)
 	{
 		(*dStickNotifFinder)[forwardKey].Unbind(this, &Input::Axis::StickCallback);
@@ -1640,6 +1761,11 @@ std::string Input::Axis::GetKeyString()
 	}
 
 	return keyStr;
+}
+
+std::pair<Input::Key, Input::Key> Input::Axis::GetKeys()
+{
+	return std::pair<Input::Key, Input::Key>(forwardKey, backwardKey);
 }
 
 void Input::Instance::AddAxis(std::string name, Input::Key defaultKeyID)
@@ -1708,6 +1834,13 @@ void Input::Instance::SetAxisListening(std::string name, AxisListeningMode mode)
 	deviceNotifFinder.SetListening(&axis->second, mode);
 }
 
+std::pair<Input::Key, Input::Key> Input::Instance::GetAxisKeys(std::string name)
+{
+	auto axis = axes.find(name);
+	if (axis == axes.end()) return std::pair<Input::Key, Input::Key>();
+	else return axis->second.GetKeys();
+}
+
 std::string Input::Instance::GetAxisKeyString(std::string name)
 {
 	auto axis = axes.find(name);
@@ -1760,4 +1893,13 @@ Input::BindSet::AxisDescriptor::AxisDescriptor(std::string _name, Input::Axis& _
 Input::AxisListeningPreference Input::BindSet::AxisDescriptor::GetListeningPreference()
 {
 	return (bkey == INVALID_KEY) ? OneKey : TwoKeys;
+}
+
+void Input::KeyNotify::operator()(Key& k, Mode m)
+{
+	if (m == Press)
+	{
+		lastUsedKey = k;
+	}
+	KeyNotifyBase::operator()(k, m);
 }
